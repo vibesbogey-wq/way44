@@ -464,59 +464,61 @@ Way Academy — Улаанбаатарт байрладаг сургалтын �
 def manychat_ai():
     """
     ManyChat → External Request → энд POST хийнэ.
-
-    Оролт JSON:
-      {
-        "text": "{{last_input}}",
-        "turn": "{{custom.msg_count}}"   # optional
-      }
-
-    Гаралт JSON:
-      {
-        "reply": "....",
-        "ask_phone": true/false
-      }
-
-    ask_phone == true бол ManyChat талдаа Phone CTA buttons гаргана.
+    ManyChat v2 format буцаана.
     """
+    try:
+        data = request.get_json(silent=True) or {}
+        print("===== MANYCHAT EVENT =====")
+        print(data)
 
-    data = request.get_json(silent=True) or {}
-    print("===== MANYCHAT EVENT =====")
-    print(data)
+        # user_message олох
+        user_text = data.get("user_message", "")
+        
+        if not user_text:
+            user_text = data.get("text", "")
+        
+        if not user_text:
+            return jsonify({
+                "version": "v2",
+                "content": {
+                    "messages": [
+                        {
+                            "type": "text",
+                            "text": "Асуултаа бичээд явуулаарай 😊"
+                        }
+                    ]
+                }
+            }), 200
 
-    user_text = ""
-
-    if isinstance(data.get("text"), str):
-        user_text = data["text"].strip()
-    elif isinstance(data.get("data"), dict) and isinstance(data["data"].get("text"), str):
-        user_text = data["data"]["text"].strip()
-    elif isinstance(data.get("message"), dict) and isinstance(data["message"].get("text"), str):
-        user_text = data["message"]["text"].strip()
-    elif isinstance(data.get("content"), dict) and isinstance(data["content"].get("text"), str):
-        user_text = data["content"]["text"].strip()
-
-    if not user_text:
-        user_text = "Сайн байна уу? Way Academy-ийн талаар юу сонирхож байна вэ? 😊"
-
-    # turn: ManyChat дотор custom field байж болно (optional)
-    turn = None
-    if "turn" in data:
-        try:
-            turn = int(data["turn"])
-        except (TypeError, ValueError):
-            turn = None
-
-    ask_phone = should_ask_phone(user_text, turn=turn)
-
-    if ask_phone:
-        reply_text = get_soft_conversion_reply()
-    else:
-        reply_text = generate_ai_reply(user_text)
-
-    return jsonify({
-        "reply": reply_text,
-        "ask_phone": ask_phone
-    })
+        # AI хариу үүсгэх
+        ai_reply = generate_ai_reply(user_text)
+        
+        # ManyChat v2 format буцаах
+        return jsonify({
+            "version": "v2",
+            "content": {
+                "messages": [
+                    {
+                        "type": "text",
+                        "text": ai_reply
+                    }
+                ]
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"ManyChat webhook error: {e}")
+        return jsonify({
+            "version": "v2",
+            "content": {
+                "messages": [
+                    {
+                        "type": "text",
+                        "text": "Уучлаарай, техникийн алдаа гарлаа. Та 99201187 руу шууд залгана уу 😊"
+                    }
+                ]
+            }
+        }), 500
 
 
 

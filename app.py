@@ -443,16 +443,20 @@ Way Academy — Улаанбаатарт байрладаг сургалтын �
 Бүх хариултаа ЗӨВХӨН монголоор өг. Найрсаг, хүнлэг, энгийн байж яриарай, робот биш!
 """
 
-    completion = client.chat.completions.create(
-        model="gpt-4.1-mini",  # хэрэглэх моделээ энд тааруулж солиорой
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        temperature=0.7,
-    )
 
-    return completion.choices[0].message.content.strip()
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4.1-mini",  # хэрэглэх моделээ энд тааруулж солиорой
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0.7,
+        )
+        return completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"OpenAI API Error: {e}")
+        return "Уучлаарай, одоогоор системд алдаа гарлаа. Та дараа дахин оролдоно уу эсвэл 99201187 дугаарт холбогдоорой."
 
 
 # ---------------- ManyChat EXTERNAL REQUEST ENDPOINT ---------------- #
@@ -514,6 +518,11 @@ def manychat_ai():
         "ask_phone": ask_phone
     })
 
+
+
+@app.route("/", methods=["GET"])
+def health_check():
+    return "OK", 200
 
 # ---------------- Main ---------------- #
 if __name__ == "__main__":

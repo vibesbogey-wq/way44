@@ -1,4 +1,5 @@
 import os
+import re
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -324,8 +325,11 @@ def match_faq(user_message: str) -> str | None:
     """Ерөнхий FAQ асуулттай таарвал хариуг нь буцаана."""
     text = user_message.lower()
     for item in FAQ_LIST:
-        if any(kw.lower() in text for kw in item["q_keywords"]):
-            return item["answer"]
+        for kw in item["q_keywords"]:
+            # Бүтэн үг таарах эсэхийг шалгана (substring биш)
+            pattern = r'\b' + re.escape(kw.lower()) + r'\b'
+            if re.search(pattern, text):
+                return item["answer"]
     return None
 
 
